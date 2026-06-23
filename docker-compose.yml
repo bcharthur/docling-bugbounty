@@ -1,0 +1,9 @@
+services:
+  docling-bugbounty:
+    build: .
+    image: docling-bugbounty
+    # Les données (PDF + Markdown) sont persistées sur l'hôte.
+    volumes:
+      - ./data:/app/data
+    # Surcharge possible : nombre d'articles, catégories, mots-clés.
+    command: ["--max-results", "20", "--categories", "cs.CR"]
