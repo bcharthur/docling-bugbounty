@@ -10,10 +10,8 @@ import argparse
 import os
 from pathlib import Path
 
-from convert import convert_pdf
+from convert import build_converter, convert_pdf
 from fetch_arxiv import DEFAULT_CATEGORIES, download_pdf, search_arxiv
-
-from docling.document_converter import DocumentConverter
 
 
 def main() -> None:
@@ -48,7 +46,7 @@ def main() -> None:
     if not pdfs:
         print("Aucun PDF à convertir.")
         return
-    converter = DocumentConverter()
+    converter = build_converter(do_ocr=False)
     for pdf in pdfs:
         print(f"- {pdf.name}")
         convert_pdf(converter, pdf, md_dir)

@@ -11,7 +11,28 @@ import argparse
 import os
 from pathlib import Path
 
-from docling.document_converter import DocumentConverter
+from docling.datamodel.base_models import InputFormat
+from docling.datamodel.pipeline_options import PdfPipelineOptions
+from docling.document_converter import DocumentConverter, PdfFormatOption
+
+
+def build_converter(do_ocr: bool = False) -> DocumentConverter:
+    """Construit un DocumentConverter adapté aux PDF arXiv.
+
+    Les articles arXiv sont des PDF "born-digital" : ils possèdent déjà une
+    couche texte native. L'OCR est donc inutile et, par défaut, l'engine OCR de
+    docling (RapidOCR/PP-OCRv6) échoue sur certaines configurations torch
+    (« Unsupported configuration: torch.PP-OCRv6.det.small »). On le désactive,
+    ce qui supprime l'erreur et accélère nettement la conversion.
+    """
+    pipeline_options = PdfPipelineOptions()
+    pipeline_options.do_ocr = do_ocr
+    return DocumentConverter(
+        format_options={
+            InputFormat.PDF: PdfFormatOption(pipeline_options=pipeline_options)
+        }
+    )
+
 
 
 def convert_pdf(converter: DocumentConverter, pdf_path: Path, out_dir: Path) -> Path | None:
@@ -48,8 +69,8 @@ def main() -> None:
         print(f"Aucun PDF trouvé dans {pdf_dir}. Lance d'abord fetch_arxiv.py.")
         return
 
-    print(f"{len(pdfs)} PDF à convertir. Initialisation de docling...")
-    converter = DocumentConverter()
+    print(f"{len(pdfs)} PDF à convertir. Initialisation de docling (OCR désactivé)...")
+    converter = build_converter(do_ocr=False)
 
     out_dir = Path(args.out)
     for pdf in pdfs:

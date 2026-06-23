@@ -85,6 +85,15 @@ python search.py "CVE" "remote code execution" "deserialization"
 - `--keywords`   : filtre par mots-clés sur le résumé,
   ex. `--keywords "smart contract,web,LLM"`.
 
+## OCR désactivé par défaut
+
+Les articles arXiv sont des PDF « born-digital » : ils ont déjà une couche
+texte. L'OCR est donc inutile et il est désactivé (`do_ocr=False` dans
+`build_converter`). Cela évite l'erreur
+`Unsupported configuration: torch.PP-OCRv6.det.small` de l'engine OCR par défaut
+et accélère nettement la conversion. Pour traiter des PDF scannés, réactive
+l'OCR en passant `do_ocr=True`.
+
 ## Note
 
 arXiv impose des règles d'usage de son API (pas de scraping massif). Le script
