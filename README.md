@@ -20,6 +20,7 @@ Markdown propre, bien plus pertinent pour la recherche et l'analyse.
 | `convert.py`       | Convertit les PDF en Markdown via docling.                      |
 | `pipeline.py`      | Enchaîne fetch + convert (point d'entrée du conteneur).         |
 | `search.py`        | Recherche par mots-clés dans les Markdown générés.             |
+| `agent.py`         | Agent Claude qui raisonne sur le corpus (bug bounty).          |
 | `Dockerfile`       | Image contenant docling et toutes les dépendances.             |
 | `docker-compose.yml` | Lancement simplifié avec persistance des données.            |
 
@@ -84,6 +85,51 @@ python search.py "CVE" "remote code execution" "deserialization"
 - `--max-results` : nombre d'articles (def. 20).
 - `--keywords`   : filtre par mots-clés sur le résumé,
   ex. `--keywords "smart contract,web,LLM"`.
+
+## Agent Claude : `claude <-> docling <-> PDFs`
+
+Une fois les articles convertis, `agent.py` branche l'API Claude sur le corpus.
+Claude dispose de trois outils pour explorer les Markdown **à la demande**
+(plutôt que de tout charger en contexte, ce qui exploserait pour des dizaines
+de papiers) :
+
+- `list_documents` — lister les articles et leur titre
+- `search_corpus` — recherche par mots-clés dans tout le corpus
+- `read_document` — lire un article (paginé)
+
+Tu lui donnes une mission + le périmètre (scope) du programme, et il propose des
+pistes de vulnérabilités à investiguer **en respectant le scope**.
+
+```bash
+export ANTHROPIC_API_KEY=sk-ant-...
+
+# Mission ponctuelle, avec un fichier de scope
+python agent.py --scope scope.example.md \
+  "À partir des articles, propose 3 pistes de failles web reportables et la méthodo de test"
+
+# Mode interactif (conversation multi-tours)
+python agent.py --scope scope.example.md
+```
+
+Avec Docker (on passe la clé API et le corpus en volume) :
+
+```bash
+docker run --rm -it \
+  -e ANTHROPIC_API_KEY \
+  -v "$(pwd)/data:/app/data" \
+  -v "$(pwd)/scope.example.md:/app/scope.md" \
+  --entrypoint python docling-bugbounty \
+  agent.py --scope scope.md "Propose des pistes de failles reportables"
+```
+
+Détails techniques :
+- Modèle **`claude-opus-4-8`** avec *thinking* adaptatif et `effort: high`.
+- Boucle d'outils gérée par le **tool runner** du SDK Anthropic (`beta_tool`).
+- `read_document` filtre le nom de fichier pour empêcher toute traversée de chemin.
+
+> ⚠️ Usage responsable : l'agent produit de la **méthodologie** et des classes de
+> vulnérabilités à partir de la littérature. Tout test doit se faire uniquement
+> sur des cibles **autorisées** par le programme YesWeHack et dans son scope.
 
 ## OCR désactivé par défaut
 

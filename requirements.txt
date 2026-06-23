@@ -3,3 +3,6 @@ docling>=2.0.0
 
 # Récupération des articles arXiv (le flux Atom est parsé avec la stdlib)
 requests>=2.31.0
+
+# Intégration LLM (agent Claude qui raisonne sur le corpus)
+anthropic>=0.69.0
